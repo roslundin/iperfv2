@@ -115,7 +115,9 @@ public class MainActivity extends AppCompatActivity implements PresetAdapter.Lis
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.menu_about:
-
+                // jcomment:
+                // Normalt brukar man lägga alla UI-strängar i en resursfil så det blir enklare att göra eventuell lokalisering
+                // Är kanske strunt samma i denna app eftersom den aldrig kommer att släppas på annat språk än engelska
                 AlertDialog alertDialog = new AlertDialog.Builder(this).create(); //Read Update
                 alertDialog.setTitle("Information");
                 alertDialog.setMessage("" +
@@ -190,6 +192,11 @@ public class MainActivity extends AppCompatActivity implements PresetAdapter.Lis
 
                     // If command is not empty it will run otherwise act like no click happened.
                     if (cmd.length() > 0) {
+                        // jcomment:
+                        // Oavsett vilken sträng som användaren matar in så kommer executeTest anropas med den strängen.
+                        // T e x en sträng som bara innehåller blanksteg eller stollig syntax. Det kanske vore bättre om
+                        // formatCmd returnerade true eller false beroende på om strängen är valid eller ej och endast om
+                        // den är ok (true), så anropas executeTest och knappen blir grön.
                         executeTest(formatCmd(cmd));
                         buttonView.setBackgroundColor(Color.GREEN);
                     } else {
@@ -275,11 +282,25 @@ public class MainActivity extends AppCompatActivity implements PresetAdapter.Lis
             if (param.contains("--forceflush")) {
                 params.add(1, true);
             }
+            // jcomment:
+            // Även det långa formatet --format matchas här. Även argumenten --forceflush och
+            // --file kommer dock att matchas av detta, vilket inte är önskvärt.
             if (param.contains("-f")) {
                 params.add(2, true);
             }
+            // jcomment:
+            // Även det långa formatet --interval matchas här. OM de någonsin kommer att introducera
+            // något annat argument som också har -i som substräng, kommer även den att matcha hör vilket
+            // kanske inte är önskvärt (se ovan på -f)
             if (param.contains("-i")) {
                 params.add(3, true);
+                // jcomment:
+                // Detta funkar nog inte som ni har tänkt er. Detta täcker endast in fallet med att användaren
+                // anger interval i formatet -i5. Om hen istället använder -i 5 så kommer param bara vara "-i"
+                // när ni kommer hit och det finns ingen siffra att parsa ut. Ännu värre är det om användaren
+                // använder långformatet "--interval 5" (eller skriver någonting stolligt som -iAPA). Då kraschar
+                // applikationen eftersom ni kommer försöka översätta -nterval eller APA till en siffra).
+                // Applikationen skall aldrig krascha även om användaren gör någonting idiotiskt.
                 String tmp = param.replace("-i","");
                 if( tmp != "") {
                     interval = Integer.parseInt(tmp);
@@ -289,16 +310,46 @@ public class MainActivity extends AppCompatActivity implements PresetAdapter.Lis
         if(params.get(0) == false) {
             return cmd;
         }
+        // jcomment:
+        // Att fortsätta kolla om params.get(0) == true verkar onödigt. Om den inte är det så har ni
+        // redan returnerat enligt koden precis ovan, d v s ni kommer aldrig komma hit om den är false
         if(params.get(0) == true && params.get(1) == false) {
             newCmd.append(" --forceflush");
         }
         if(params.get(0) == true && params.get(2) == false) {
             newCmd.append(" -fm");
         }
+        // jcomment:
+        // interval är väl redan 1 (om den inte uttryckligen satts till annat av användaren men i så fall
+        // är params.get(3) true hursomhelst.
         if(params.get(0) == true && params.get(3) == false) {
             interval = 1;
         }
         return newCmd.toString();
+
+        // jcomment:
+        // Jag tror absolut att ni kan fixa till den hör metoden så att den gör exakt vad ni har tänkt
+        // men jag känner också att ni kankse komplicerar det hela något med strängsplittningar och
+        // bool-arrayer. Här är en alternativ idé på hur man skulle kunna göra (i någon slags c#-meta-
+        // syntax för jag orkar inte kolla exakt hur det skulle se ut i java). Har inte heller testat detta
+        // men jag tror att idén är sund :)
+        // Testa att göra motsvarande i Java om ni har lust...
+        //
+        // cmd = cmd.trim();
+        // if(!cmd.startsWith("iperf3")
+        //      return cmd; // eller "" eller "whatever" ...
+        // if(!cmd.contains("--forceflush")
+        //      cmd += " --forceflush";
+        // // Regexpa ut -i och -f; ta hänsyn till både kort- och långformat samt att argumentet
+        // // måste särskrivas om långformat: -i 5, -i5, --interval 5 är alla ok, inte --interval5
+        // Match m;
+        // m = Match(cmd, "(-i\\s*|--interval\\s+)(\\d+)");
+        // if(m.success())
+        //      interval = Integer.parseInt(m.groups(2));
+        // m = Match(cmd, "(-f\\s*|--format\\s+)[kmgtKMGT]");
+        // if(!m.success())
+        //      cmd += " -fm";
+        // return cmd;
     }
 
 
@@ -336,8 +387,24 @@ public class MainActivity extends AppCompatActivity implements PresetAdapter.Lis
         String fileContents = builder.toString();
 
         try {
+            // jcomment:
+            // getExternalStorageDirectory() verkar vara deprecated fr o m api 29, alternativ?
             File extBaseDir = Environment.getExternalStorageDirectory();
+            // jcomment:
+            // filename är egentligen namnet på en directory. Filename kommer senare och är då
+            // log.txt eller graph.png
             File file = new File(extBaseDir.getAbsolutePath() + "/iPerf/" + filename );
+            // jcomment:
+            // Jag kanske missar någonting här men kommer det någonsin att existera en mapp med det
+            // det här namnet sedan tidigare? Med tanke på hur ni namnger mappen så skull det kräva
+            // att man kör save 2ggr på samma sekund vilket inte verkar sannolikt. Dessutom kör ni
+            // file.mkdirs(); i alla händelser varför den kan lyftas ut från if-elsen.
+            // Nedan borde kunna ersättas med
+            // if(file.exists())
+            //    file.delete();
+            // file.mkdirs();
+            // Men som sagt, fundera på om man inte kan nöja sig med bara:
+            // file.mkdirs();
             if (!file.exists()) {
                 file.mkdirs();
             } else {

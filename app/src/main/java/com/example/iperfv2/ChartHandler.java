@@ -40,6 +40,8 @@ public class ChartHandler {
                 set = createSet(1);
                 data.addDataSet(set);
             }
+            // jcomment:
+            // down är en float redan; behöver inte castas
             data.addEntry(new Entry(set.getEntryCount() * interval, (float) down), 0);
             data.notifyDataChanged();
             chart.notifyDataSetChanged();
@@ -66,6 +68,8 @@ public class ChartHandler {
                 data.addDataSet(setUp);
             }
 
+            // jcomment:
+            // up och down är en float redan; behöver inte castas
             setDown.addEntry(new Entry(setDown.getEntryCount() * interval, (float) down));
             setUp.addEntry(new Entry(setUp.getEntryCount() * interval, (float) up));
             data.notifyDataChanged();
@@ -78,26 +82,32 @@ public class ChartHandler {
     public LineDataSet createSet(int setType) {
         LineDataSet set = null;
         switch(setType) {
+            // jcomment:
+            // Allt som är samma i de båda fallen kan lyftas ut så att den koden endast existerar
+            // 1 gång OM man inte tror att man i framtiden kommer vilja ha olika värden beroende vilket
+            // case som gäller.
             case 1:
                 set = new LineDataSet(null, "Download");
-                set.setAxisDependency(YAxis.AxisDependency.LEFT);
+                set.setAxisDependency(YAxis.AxisDependency.LEFT);   // samma för case 1 och 2
                 set.setColor(Color.BLUE);
                 set.setCircleColor(Color.WHITE);
-                set.setLineWidth(2f);
-                set.setFillAlpha(65);
-                set.setDrawValues(false);
-                return set;
-
+                set.setLineWidth(2f);                               // samma för case 1 och 2
+                set.setFillAlpha(65);                               // samma för case 1 och 2
+                set.setDrawValues(false);                           // samma för case 1 och 2
+                return set;                                         // samma för case 1 och 2 + kommer efter switchen
+                                                                    // Ersätt med break; och låt return set; efter switchen göra jobbet.
             case 2:
                 set = new LineDataSet(null, "Upload");
-                set.setAxisDependency(YAxis.AxisDependency.LEFT);
+                set.setAxisDependency(YAxis.AxisDependency.LEFT);   // samma för case 1 och 2
                 set.setColor(Color.RED);
                 set.setCircleColor(Color.WHITE);
-                set.setLineWidth(2f);
-                set.setFillAlpha(65);
-                set.setDrawValues(false);
-                return set;
+                set.setLineWidth(2f);                               // samma för case 1 och 2
+                set.setFillAlpha(65);                               // samma för case 1 och 2
+                set.setDrawValues(false);                           // samma för case 1 och 2
+                return set;                                         // samma för case 1 och 2 + kommer efter switchen
+                                                                    // Ersätt med break; och låt return set; efter switchen göra jobbet.
         }
+
         return set;
     }
 
